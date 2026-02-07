@@ -8,8 +8,9 @@ const logger = require("./logger");
 
 const connectToDatabase = require("./models/db");
 
-// ✅ Import ONLY the route that exists
+// Routes
 const secondChanceItemsRoutes = require("./routes/secondChanceItemsRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 
 const app = express();
 const port = 3060;
@@ -21,15 +22,12 @@ app.use(pinoHttp({ logger }));
 
 // Connect to MongoDB once
 connectToDatabase()
-  .then(() => {
-    logger.info("Connected to DB");
-  })
-  .catch((e) => {
-    console.error("Failed to connect to DB", e);
-  });
+  .then(() => logger.info("Connected to DB"))
+  .catch((e) => console.error("Failed to connect to DB", e));
 
-// ✅ Mount Items API
+// Mount APIs
 app.use("/api/secondchance/items", secondChanceItemsRoutes);
+app.use("/api/secondchance/search", searchRoutes);
 
 // Health check
 app.get("/", (req, res) => {
