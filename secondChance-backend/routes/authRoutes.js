@@ -59,4 +59,48 @@ router.post("/register", async (req, res) => {
   }
 });
 
+router.post("/login", async (req, res) => {
+    try {
+      // Task 1: Connect to `secondChance` in MongoDB through `connectToDatabase` in `db.js`.
+      const db = await connectToDatabase();
+  
+      // Task 2: Access MongoDB `users` collection
+      const usersCollection = db.collection("users");
+  
+      // Read input
+      const { email, password } = req.body || {};
+  
+      // Task 3: Check for user credentials in database
+      const user = await usersCollection.findOne({ email });
+  
+      // Task 7: Send appropriate message if the user is not found
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      // Task 4: Check if the password matches the encrypted password and send appropriate message on mismatch
+      const passwordMatches = await bcrypt.compare(password, user.password);
+      if (!passwordMatches) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+  
+      // Task 5: Fetch user details from a database
+      const userName = user.name || user.userName || "User";
+      const userEmail = user.email;
+  
+      // Task 6: Create JWT authentication if passwords match with user._id as payload
+      const authtoken = jwt.sign(
+        { userId: user._id.toString() },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+  
+      // Return format shown in the lab template
+      return res.json({ authtoken, userName, userEmail });
+    } catch (e) {
+      logger.error(e);
+      return res.status(500).send("Internal server error");
+    }
+  });
+  
 module.exports = router;
