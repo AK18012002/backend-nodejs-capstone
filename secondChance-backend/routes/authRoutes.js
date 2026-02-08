@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { body, validationResult } = require("express-validator");
 
 const connectToDatabase = require("../models/db");
 const logger = require("../logger");
@@ -102,5 +103,64 @@ router.post("/login", async (req, res) => {
       return res.status(500).send("Internal server error");
     }
   });
+  
+
+  router.put(
+    "/update",
+    [
+      // Task 1: input validation rules
+      body("name").notEmpty().withMessage("Name is required"),
+    ],
+    async (req, res) => {
+  
+      // Task 2: Validate input using validationResult
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+  
+      try {
+        // Task 3: Check if email is present in headers
+        const email = req.headers.email;
+        if (!email) {
+          return res.status(400).json({ error: "Email not found in request headers" });
+        }
+  
+        // Task 4: Connect to MongoDB
+        const db = await connectToDatabase();
+        const collection = db.collection("users");
+  
+        // Task 5: Find user credentials
+        const existingUser = await collection.findOne({ email });
+        if (!existingUser) {
+          return res.status(404).json({ error: "User not found" });
+        }
+  
+        // Update fields
+        existingUser.firstName = req.body.name;
+        existingUser.updatedAt = new Date();
+  
+        // Task 6: Update user credentials in DB
+        await collection.updateOne(
+          { email },
+          { $set: existingUser }
+        );
+  
+        // Task 7: Create JWT authentication
+        const payload = {
+          user: {
+            id: existingUser._id.toString(),
+          },
+        };
+  
+        const authtoken = jwt.sign(payload, process.env.JWT_SECRET);
+  
+        return res.json({ authtoken });
+      } catch (e) {
+        logger.error(e);
+        return res.status(500).send("Internal server error");
+      }
+    }
+  );
   
 module.exports = router;
