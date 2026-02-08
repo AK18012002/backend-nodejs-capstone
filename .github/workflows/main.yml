@@ -1,0 +1,32 @@
+name: Node.js CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: secondChance-backend
+        run: |
+          npm install
+
+      - name: Run backend lint (if available)
+        working-directory: secondChance-backend
+        run: |
+          npm run lint --if-present
+
+      - name: Install frontend dependencies
